@@ -1,1 +1,1 @@
-<https://pchul1.github.io/index.html/>
+<https://pchul1.github.io/index.html>
