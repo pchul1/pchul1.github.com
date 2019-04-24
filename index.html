@@ -92,6 +92,7 @@
 				
 				var coord = JSON.parse($(this).attr('coord'));
 				coord.zoom = 15;
+				coord.marker = true;
 				
 				_MapEventBus.trigger(_MapEvents.map_move , coord);
 			});
@@ -115,6 +116,7 @@
 				
 				var coord = JSON.parse($(this).attr('coord'));
 				coord.zoom = 15;
+				coord.marker = true;
 				_MapEventBus.trigger(_MapEvents.map_move , coord);
 			});
 			 

@@ -62,6 +62,8 @@ var _CoreMap = function() {
 	var helpTooltipElement;
 	var helpTooltip;
 	
+	var markerLayer;
+	
 	// 임의 지점 관련
 	
 	var tempBranchLayer;
@@ -245,6 +247,8 @@ var _CoreMap = function() {
 		// feature 클릭시 팝업을 띄우기 위한 초기화
 	    setPopupOverlay();
 		
+	    setMarkerLayer();
+	    
 	    $.getScript( './js/lib/zoomSlider.js', function( data, textStatus, jqxhr ) {
 	    	_ZoomSlider.init({
 				top : 90,
@@ -256,7 +260,8 @@ var _CoreMap = function() {
 				mapDiv: 'map'
 			});
     	});
-		
+	
+	
 	    var mapParent = $('#'+mapDiv).parent();
 	    
 	    $(window).on('resize', function(){
@@ -279,6 +284,27 @@ var _CoreMap = function() {
 		// setVworldWmsLayerCheckbox();
 	    
 	    //setTempBranchLayer();
+	}
+	
+	var setMarkerLayer = function(){
+		markerLayer = new ol.layer.Vector({ 
+			name : 'markerLayer',
+			source : new ol.source.Vector({ }),
+			style : function(feature, resolution){
+				return [new ol.style.Style({
+					image: new ol.style.Icon({
+						opacity: 1,
+						src: './images/apoint.png',
+						anchor: [0.5, 0.5], 
+				        anchorXUnits: 'fraction',
+				        anchorYUnits: 'fraction',
+						crossOrigin: 'Anonymous'
+					})
+				})];
+			}
+		}); 
+	 
+		_MapEventBus.trigger(_MapEvents.map_addLayer, markerLayer);
 	}
 	
 	var fillToValue = function(temp, val){
@@ -999,6 +1025,26 @@ var _CoreMap = function() {
 	};
 	var mapMove = function(event, data){
 		centerMap(data.x, data.y, data.zoom);
+		if(data.marker){
+			addMarker(data);
+		}
+	}
+	var addMarker = function(feature) {
+		if(markerLayer == undefined){
+			return;
+		}
+		
+		if(feature.x == undefined || feature.y == undefined){
+			return;
+		}
+		
+		
+		var tempCoord = ol.proj.transform([parseFloat(feature.x), parseFloat(feature.y)], 'EPSG:4326', 'EPSG:3857');
+		
+		var feature = new ol.Feature({geometry:new ol.geom.Point(tempCoord), properties: feature.properties});
+		
+		markerLayer.getSource().addFeature(feature);
+		
 	}
 	var centerMap = function(long, lat, zoomLavel) {
 		var centerPoint;
