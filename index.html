@@ -91,8 +91,9 @@
 			$('.moveTo').off('click').on('click', function(){
 				
 				var coord = JSON.parse($(this).attr('coord'));
-				_CoreMap.centerMap(coord.x, coord.y, 15);
+				coord.zoom = 15;
 				
+				_MapEventBus.trigger(_MapEvents.map_move , coord);
 			});
 		});
 		
@@ -113,8 +114,8 @@
 			$('.moveTo').off('click').on('click', function(){
 				
 				var coord = JSON.parse($(this).attr('coord'));
-				_CoreMap.centerMap(coord.x, coord.y, 15);
-				
+				coord.zoom = 15;
+				_MapEventBus.trigger(_MapEvents.map_move , coord);
 			});
 			 
 		});
