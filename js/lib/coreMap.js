@@ -546,30 +546,40 @@ var _CoreMap = function() {
 				}
 				coreMap.once('postcompose', function(event) {
 					var canvas = event.context.canvas;
-					var mapImg = canvas.toDataURL('image/png'); 
-					var url = mapImg.replace(/^data:image\/[^;]+/, '');
-				
-					var form = document.createElement("form");
-					form.setAttribute("charset", "UTF-8");
-					form.setAttribute("method", "Post");
-					form.setAttribute("action", "./mapImageSave.jsp");
-					
-					var hiddenField = document.createElement("input");
-					
-					hiddenField.setAttribute("type", "hidden");
-					hiddenField.setAttribute("name", "_imageData_");
-					hiddenField.setAttribute("value", url);
-					form.appendChild(hiddenField);
-					
-					hiddenField = document.createElement("input");
-					hiddenField.setAttribute("type", "hidden");
-					hiddenField.setAttribute("name", "_imageFileName_");
-					hiddenField.setAttribute("value", 'mapImage');
-					form.appendChild(hiddenField);
-					document.body.appendChild(form);
-					form.submit();
+					var dataURL = canvas.toDataURL('image/png'); 
+//					var url = dataURL.replace(/^data:image\/[^;]+/, '');
 
-					document.body.removeChild(form);
+					if(isIE){
+						var form = document.createElement("form");
+						form.setAttribute("charset", "UTF-8");
+						form.setAttribute("method", "Post");
+						form.setAttribute("action", "./mapImageSave.jsp");
+						
+						var hiddenField = document.createElement("input");
+						
+						hiddenField.setAttribute("type", "hidden");
+						hiddenField.setAttribute("name", "_imageData_");
+						hiddenField.setAttribute("value", url);
+						form.appendChild(hiddenField);
+						
+						hiddenField = document.createElement("input");
+						hiddenField.setAttribute("type", "hidden");
+						hiddenField.setAttribute("name", "_imageFileName_");
+						hiddenField.setAttribute("value", 'mapImage');
+						form.appendChild(hiddenField);
+						document.body.appendChild(form);
+						form.submit();
+
+						document.body.removeChild(form);	
+					}else{
+						dataURL = dataURL.replace(/^data:image\/[^;]*/, 'data:application/octet-stream');
+						dataURL = dataURL.replace(/^data:application\/octet-stream/, 'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=mapImage.png');
+						
+						var target = document.createElement('a');
+						target.download = 'mapImage.png';
+						target.href = dataURL;
+						target.click();
+					}
 					 
 //					$('#__fileDownloadIframe__').remove(); 
 //					$('body').append('<iframe src='+url+' id="__fileDownloadIframe__" name="__fileDownloadIframe__" width="0" height="0" style="display:none;"/>');
