@@ -156,7 +156,7 @@ var _CoreMap = function() {
 		}
 	}
 	
-	var createMap = function(mapDivId) {
+	var createMap = function(mapDivId, vworldMapFlag) {
 		mapDiv = mapDivId;
 		var layerInfos = [];
 		mapLayers = [];
@@ -213,6 +213,7 @@ var _CoreMap = function() {
 		var admnsDstrcLayers = createTileLayer(layerInfos);
 		
 		mapLayers = mapLayers.concat(admnsDstrcLayers);
+		//WebGLMap
 		
 		coreMap = new ol.Map({
 			controls : ol.control.defaults({
@@ -546,43 +547,13 @@ var _CoreMap = function() {
 				}
 				coreMap.once('postcompose', function(event) {
 					var canvas = event.context.canvas;
-					var dataURL = canvas.toDataURL('image/png'); 
-//					var url = dataURL.replace(/^data:image\/[^;]+/, '');
-
-					if(isIE){
-						var form = document.createElement("form");
-						form.setAttribute("charset", "UTF-8");
-						form.setAttribute("method", "Post");
-						form.setAttribute("action", "./mapImageSave.jsp");
-						
-						var hiddenField = document.createElement("input");
-						
-						hiddenField.setAttribute("type", "hidden");
-						hiddenField.setAttribute("name", "_imageData_");
-						hiddenField.setAttribute("value", url);
-						form.appendChild(hiddenField);
-						
-						hiddenField = document.createElement("input");
-						hiddenField.setAttribute("type", "hidden");
-						hiddenField.setAttribute("name", "_imageFileName_");
-						hiddenField.setAttribute("value", 'mapImage');
-						form.appendChild(hiddenField);
-						document.body.appendChild(form);
-						form.submit();
-
-						document.body.removeChild(form);	
-					}else{
-						dataURL = dataURL.replace(/^data:image\/[^;]*/, 'data:application/octet-stream');
-						dataURL = dataURL.replace(/^data:application\/octet-stream/, 'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=mapImage.png');
-						
-						var target = document.createElement('a');
-						target.download = 'mapImage.png';
-						target.href = dataURL;
-						target.click();
-					}
-					 
-//					$('#__fileDownloadIframe__').remove(); 
-//					$('body').append('<iframe src='+url+' id="__fileDownloadIframe__" name="__fileDownloadIframe__" width="0" height="0" style="display:none;"/>');
+					if (navigator.msSaveBlob) {
+			            navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
+			        } else {
+			            canvas.toBlob(function(blob) {
+			                saveAs(blob, 'map.png');
+			            });
+			        }
 				}); 
 				coreMap.renderSync();
 			}else if(toolType == TOOL_TYPE_PRINT){
@@ -1282,10 +1253,10 @@ var _CoreMap = function() {
 	// public functions
 	return {
 
-		init : function(mapDivId, toolsOptions) {
+		init : function(mapDivId, vworldMapFlag ,toolsOptions) {
 			var me = this;
 			init();
-			createMap(mapDivId);
+			createMap(mapDivId, vworldMapFlag);
 			setTools(toolsOptions);
 			return me;
 		},

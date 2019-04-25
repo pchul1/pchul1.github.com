@@ -60,6 +60,7 @@ var _VWorldLayer = function () {
 					group:'Hybrid'};
 		}
 		return new ol.layer.Tile({
+			preload: Infinity,
 			source: new ol.source.XYZ({
 				tileSize: tileSizes,
 				url:vwHybridMapUrl,
@@ -79,6 +80,7 @@ var _VWorldLayer = function () {
 					group:'Satellite'};
 		}
 		return new ol.layer.Tile({
+			preload: Infinity,
 			source: new ol.source.XYZ({
 				tileSize: tileSizes,
 				url:vwRasterMapUrl,
