@@ -5,7 +5,7 @@ var _ZoomSlider = function () {
 			plusMinusButtonSize:20,
 			top : 70,
 			right : 100,
-			maxGrade: 19,
+			maxGrade: 18,
 			minGrade : 5, 
 			id : 'mapNavBar',
 			mapDiv: 'map'
@@ -113,7 +113,19 @@ var _ZoomSlider = function () {
 		
 		
 		_MapEventBus.on(_MapEvents.map_moveend, function(mapChangeType){
-			_ZoomSlider.setLevelToGaze(_CoreMap.getMap().getView().getZoom());
+			_ZoomSlider.setLevelToGaze(_CoreMap.getZoom());
+		});
+		
+		_MapEventBus.on(_MapEvents.baseMap_changed, function(event, param){
+			if(param.baseMapType == 'VWORLD'){
+				zoomOptions.maxGrade = 18;
+				zoomOptions.minGrade = 5;
+			}else{
+				zoomOptions.maxGrade = 13;
+				zoomOptions.minGrade = 0;
+			}
+			
+			_ZoomSlider.setLevelToGaze(_CoreMap.getZoom());
 		});
 	};
 	

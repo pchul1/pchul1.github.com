@@ -58,6 +58,14 @@ _MapEvents.layerLoaded = 'layerLoaded';
 _MapEvents.map_addOverlay = 'map_addOverlay';
 _MapEvents.map_removeOverlay = 'map_removeOverlay';
 
+_MapEvents.baseMap_changed = 'baseMap_changed';
+
+_MapEvents.show_daum_map_base_layer = 'show_daum_map_base_layer';
+_MapEvents.show_daum_map_road_layer = 'show_daum_map_road_layer';
+
+_MapEvents.clear_other_base_layer = 'clear_other_base_layer';
+
+_MapEvents.map_view_changed = 'map_view_changed';
 
 
 var _MapEventBus = $({});

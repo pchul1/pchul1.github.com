@@ -6,7 +6,16 @@ var _CoreMap = function() {
 	var vworldAddrUrl = 'http://apis.vworld.kr/coord2jibun.do?x=#X#&y=#Y#&apiKey=7A0635A7-67B9-39CD-96BC-65D901E709B3&domain=http://www.eburin.net&output=json&epsg=EPSG:4326&callback=?';
 	var nhnAddrUrl = 'http://openapi.map.naver.com/api/reversegeocode?key=ed361f09f893f6489eed72ec266fa190&encoding=utf-8&coord=latlng&output=json&callback=?&query=#X#,#Y#';
 
+	var BASE_MAP_TYPE_VWORLD = 'VWORLD';
+	var BASE_MAP_TYPE_DAUM = 'DAUM';
+	
+	var BASE_MAP_TYPE = BASE_MAP_TYPE_VWORLD;
+	
 	var DRAG_MODE_NONE = 'NONE';
+	
+	var TOOL_TYPE_DAUM_MAP = -1;
+	
+	var TOOL_TYPE_DAUM_ROAD_VIEW = -2;
 	
 	var TOOL_TYPE_DEFAULT = 0;
 	var TOOL_TYPE_SATELLITE = 1;
@@ -39,7 +48,7 @@ var _CoreMap = function() {
 	var featureDragTag = DRAG_MODE_NONE;
 	
 	var requestParams = false;
-
+	
 	var initParam = {
 		worldProjection : 'EPSG:4326',
 		targetProjection : 'EPSG:3857',
@@ -52,7 +61,9 @@ var _CoreMap = function() {
 			zoom : 8
 		}
 	};
-
+	
+	var currentProjection = initParam.targetProjection;
+	
 	// 측정관련
 	var draw; 
 	var sketch;
@@ -100,7 +111,8 @@ var _CoreMap = function() {
 
 		proj4.defs('EPSG:32652','+proj=utm +zone=52 +ellps=WGS84 +datum=WGS84 +units=m +no_defs ');
 		proj4.defs('EPSG:5179','+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs');
-		
+		proj4.defs("EPSG:5181","+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+        
 		ol.proj.proj4.register(proj4);
 		
 		if (ol.Map.prototype.getLayerForName === undefined) {
@@ -233,7 +245,7 @@ var _CoreMap = function() {
 				rotation : 0,
 				center : initParam.center.centerPoint,
 				minZoom : 5,
-				maxZoom : 19,
+				maxZoom : 18,
 				zoom : initParam.center.zoom
 			})
 		});
@@ -254,9 +266,9 @@ var _CoreMap = function() {
 	    	_ZoomSlider.init({
 				top : 90,
 				right : 100,
-				maxGrade: 19,
+				maxGrade: 18,
 				minGrade : 5,
-				preLevel : _CoreMap.getMap().getView().getZoom(),
+				preLevel : coreMap.getView().getZoom(),
 				id : 'mapNavBar',
 				mapDiv: 'map'
 			});
@@ -273,9 +285,8 @@ var _CoreMap = function() {
 			$('#'+mapDiv).width(w);
 			$('#'+mapDiv).height(h);
 			
-			var map = _CoreMap.getMap();
-			if(map){
-				map.setSize([w, h]);	
+			if(coreMap){
+				coreMap.setSize([w, h]);	
 			}
 	    });
 	    
@@ -478,6 +489,8 @@ var _CoreMap = function() {
 		
 		if(toolNoneFlag){
 			var tools = '<ul class="tooltip">';
+			tools += '<li class="tools" type="-2"><span class="tt08" ></span>ROAD</li>';
+			tools += '<li class="tools" type="-1"><span class="tt08" ></span>DAUM</li>';
 			
 			if(settings.measure){
 				tools += '<li class="tools" type="2"><span class="tt01" ></span>거리측정</li>';
@@ -534,14 +547,50 @@ var _CoreMap = function() {
 			var toolType = target.attr('type');
 			
 			$('.tools').removeClass('on');
-			
-			if(toolType == TOOL_TYPE_DISTANCE){
+			if(toolType == TOOL_TYPE_DAUM_ROAD_VIEW){
+				_MapEventBus.trigger(_MapEvents.show_daum_map_base_layer, {coreMap:coreMap, projection: currentProjection, baseMapType:BASE_MAP_TYPE});
+				_MapEventBus.trigger(_MapEvents.show_daum_map_road_layer, {coreMap:coreMap, projection: currentProjection, baseMapType:BASE_MAP_TYPE});
+				
+			} else if(toolType == TOOL_TYPE_DAUM_MAP){
+				$(this).html('<span class="tt08" ></span>VWORLD');
+				
+				if(BASE_MAP_TYPE == BASE_MAP_TYPE_VWORLD){
+					_MapEventBus.trigger(_MapEvents.show_daum_map_base_layer, {coreMap:coreMap, projection: currentProjection});
+					BASE_MAP_TYPE = BASE_MAP_TYPE_DAUM;
+				}else{
+					
+					_MapEventBus.trigger(_MapEvents.clear_other_base_layer, {coreMap:coreMap, type:BASE_MAP_TYPE_VWORLD});
+					
+					BASE_MAP_TYPE = BASE_MAP_TYPE_VWORLD;
+					$(this).html('<span class="tt08" ></span>DAUM');
+					
+					var centerCoordnate = coreMap.getView().getCenter()
+					var vworldCenterCoordnate = ol.proj.transform(centerCoordnate, currentProjection, initParam.targetProjection);
+					
+					coreMap.setView(new ol.View({
+	    				enableRotation : false, // 모바일에서 투터치로 지도가 회전되는 것 막음
+	    				rotation : 0,
+	    				projection: initParam.targetProjection,
+	    				minZoom: 5,
+	                    maxZoom: 18,
+	                    center : vworldCenterCoordnate,
+	                    zoom : coreMap.getView().getZoom()+5
+					}));
+					
+					showDefautMap();
+					currentProjection = initParam.targetProjection
+					BASE_MAP_TYPE = BASE_MAP_TYPE_VWORLD;
+				}
+				
+				_MapEventBus.trigger(_MapEvents.baseMap_changed, {baseMapType:BASE_MAP_TYPE});
+				
+			} else if(toolType == TOOL_TYPE_DISTANCE){
 				addInteraction(toolType);
 				$(this).addClass('on');
-			}else if(toolType == TOOL_TYPE_AREA){
+			} else if(toolType == TOOL_TYPE_AREA){
 				addInteraction(toolType);
 				$(this).addClass('on');
-			}else if(toolType == TOOL_TYPE_SAVE){
+			} else if(toolType == TOOL_TYPE_SAVE){
 				if(draw){
 					coreMap.removeInteraction(draw);
 				}
@@ -556,7 +605,7 @@ var _CoreMap = function() {
 			        }
 				}); 
 				coreMap.renderSync();
-			}else if(toolType == TOOL_TYPE_PRINT){
+			} else if(toolType == TOOL_TYPE_PRINT){
 				if(draw){
 					coreMap.removeInteraction(draw);
 				}
@@ -572,12 +621,12 @@ var _CoreMap = function() {
 					}
 				}); 
 				coreMap.renderSync();
-			}else if(toolType == TOOL_TYPE_SEARCH){
+			} else if(toolType == TOOL_TYPE_SEARCH){
 				if(draw){
 					coreMap.removeInteraction(draw);
 				}
 				window.open("/vworldSearchPop.jsp",'vworldSearchPop','width=750,height=410,toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,left=100,top=50');
-			}else if(toolType == TOOL_TYPE_TEMP_INPUT){
+			} else if(toolType == TOOL_TYPE_TEMP_INPUT){
 				
 				if(draw){
 					coreMap.removeInteraction(draw);
@@ -592,10 +641,10 @@ var _CoreMap = function() {
 				
 				_MapEventBus.on(_MapEvents.map_singleclick, tempBranchInput);
 				
-			}else if(toolType == TOOL_TYPE_RESET){
+			} else if(toolType == TOOL_TYPE_RESET){
 				clearMap();
 				currentToolType = -1;
-			}else if(toolType == TOOL_TYPE_LAYER){
+			} else if(toolType == TOOL_TYPE_LAYER){
 				showLayerDiv();
 			}
 			
@@ -863,6 +912,17 @@ var _CoreMap = function() {
 		coreMap.addOverlay(popupOverlay);
 	}
 
+	var changeMapView = function(event, param){
+		currentProjection = param.projection;
+		
+		coreMap.setView(new ol.View(param));
+	}
+	var clearVWorldLayer = function(){
+		for (var i = 0; i < 4; i++) {
+			mapLayers[i].setVisible(false);
+		}
+	}
+	
 	var setEventListener = function(){
 		_MapEventBus.on(_MapEvents.map_addLayer, addLayer);
 		
@@ -877,7 +937,9 @@ var _CoreMap = function() {
 		
 		_MapEventBus.on(_MapEvents.map_removeOverlay, removeOverlay);
 		
+		_MapEventBus.on(_MapEvents.map_view_changed, changeMapView);
 		
+		_MapEventBus.on(_MapEvents.show_daum_map_base_layer, clearVWorldLayer);
 		
 	};
 	var setMapEvent = function() {
@@ -1107,7 +1169,7 @@ var _CoreMap = function() {
 		if (coreMap == null)
 			return;
 		
-		var layer = _CoreMap.getMap().getLayerForName(layerNm);
+		var layer = coreMap.getLayerForName(layerNm);
 
     	if(layer){
     		coreMap.removeLayer(layer);

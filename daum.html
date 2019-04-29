@@ -24,6 +24,7 @@
         
         <!-- OpenLayers 3 & Proj4js -->
         <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js"></script>
+		<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=f6fdc6003e04682bdd12a69b9407c2b3"></script>
 
 		<link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/css/ol.css" type="text/css"></link>
         <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,requestAnimationFrame,Element.prototype.classList,URL"></script>
@@ -33,6 +34,9 @@
         <script type="text/javascript">
             // define epsg:5181 projection
             proj4.defs("EPSG:5181","+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+            
+            ol.proj.setProj4 = proj4;
+//             proj4.defs("EPSG:5181","+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
             ol.proj.proj4.register(proj4);
             
             var resolutions = [2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0.5, 0.25];
@@ -45,7 +49,7 @@
             });
             
             // define tile layer
-            
+            var map;
             
             function init() {
             	var tileLayer = new ol.layer.Tile({
@@ -53,7 +57,7 @@
                     visible : true,
                     type : 'base',
                     source : new ol.source.XYZ({
-                        projection: 'EPSG:5181',
+                        projection: projection,
                         minZoom: 0,
                         maxZoom: resolutions.length - 1,
                         tileGrid: new ol.tilegrid.TileGrid({
@@ -66,17 +70,16 @@
                             var z = resolutions.length - tileCoord[0];
                             var x = tileCoord[1];
                             var y = tileCoord[2];
-                            return 'https://map'+s+'.daumcdn.net/map_2d/1904fls/L'+z+'/'+y+'/'+x+'.png';
-                            
-//                              return 'http://map' + s + '.daumcdn.net/map_2d/2fso49/L' + z + '/' + y + '/' + x + '.png';
+                            return './proxy.jsp?https://map'+s+'.daumcdn.net/map_2d/1904fls/L'+z+'/'+y+'/'+x+'.png';
                         },
         				crossOrigin: 'Anonymous'
-                    }),
-                    extend: projection.extent
+                    })
                 });
             	
+            	// 0 ~ 13
+            	//
                 // set map
-                var map = new ol.Map({
+                map = new ol.Map({
         			controls : ol.control.defaults({
         				attribution : false,
         				rotate : false,
@@ -89,11 +92,15 @@
         			}) ]),
         			target : 'map',
         			layers : [tileLayer],
+        			projection: projection,
         			view : new ol.View({
         				enableRotation : false, // 모바일에서 투터치로 지도가 회전되는 것 막음
         				rotation : 0,
+        				projection: projection,
         				minZoom: 0,
-                        maxZoom: resolutions.length - 1
+                        maxZoom: resolutions.length - 1,
+                        center : [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2],
+                        zoom : 2
         			})
         		});
             };
