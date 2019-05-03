@@ -2,7 +2,7 @@ var _CoreMap = function() {
 	'use strict'
 	// private functions & variables
 	
-	var TAG = '[WPCS MAP]';
+	var TAG = '[MAP]';
 	var vworldAddrUrl = 'http://apis.vworld.kr/coord2jibun.do?x=#X#&y=#Y#&apiKey=7A0635A7-67B9-39CD-96BC-65D901E709B3&domain=http://www.eburin.net&output=json&epsg=EPSG:4326&callback=?';
 	var nhnAddrUrl = 'http://openapi.map.naver.com/api/reversegeocode?key=ed361f09f893f6489eed72ec266fa190&encoding=utf-8&coord=latlng&output=json&callback=?&query=#X#,#Y#';
 
@@ -547,9 +547,13 @@ var _CoreMap = function() {
 			var toolType = target.attr('type');
 			
 			$('.tools').removeClass('on');
+			
 			if(toolType == TOOL_TYPE_DAUM_ROAD_VIEW){
+				
 				_MapEventBus.trigger(_MapEvents.show_daum_map_base_layer, {coreMap:coreMap, projection: currentProjection, baseMapType:BASE_MAP_TYPE});
 				_MapEventBus.trigger(_MapEvents.show_daum_map_road_layer, {coreMap:coreMap, projection: currentProjection, baseMapType:BASE_MAP_TYPE});
+				
+				BASE_MAP_TYPE = BASE_MAP_TYPE_DAUM;
 				
 			} else if(toolType == TOOL_TYPE_DAUM_MAP){
 				$(this).html('<span class="tt08" ></span>VWORLD');

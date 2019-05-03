@@ -144,9 +144,30 @@ var _DaumAPI = function () {
 		_MapEventBus.on(_MapEvents.map_singleclick, roadViewClicked );
 	}
 	
+	var requestFlashPermission = function() {
+		
+	    var iframe = document.createElement('a');
+	    iframe.href = 'https://get.adobe.com/flashplayer';
+	    iframe.target = '_blank';
+	    
+	    document.body.appendChild(iframe);
+	    iframe.click();
+	    
+	    document.body.removeChild(iframe);
+ 	}
+
 	var roadViewClicked = function(event, param){
 		var roadviewContainer = document.getElementById(roadViewDiv); //로드뷰를 표시할 div
-		var roadview = new daum.maps.Roadview(roadviewContainer); //로드뷰 객체
+		var roadview;
+		
+		try{
+			roadview = new daum.maps.Roadview(roadviewContainer); //로드뷰 객체
+		}catch(e){
+			if(e.message.indexOf('Flash Player') > -1){
+				requestFlashPermission();
+				return;
+			}
+		}
 		var roadviewClient = new daum.maps.RoadviewClient(); //좌표로부터 로드뷰 파노ID를 가져올 로드뷰 helper객체
 		
 		var roadViewCoordnate = ol.proj.transform(param.result.coordinate, daumMapProjectionCode, WGS84);
